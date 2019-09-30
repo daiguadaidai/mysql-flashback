@@ -10,3 +10,8 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+
+# add by HH 2019-09-30
+rollback_files
+rollback_sqls
+mysql-flashback

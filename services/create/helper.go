@@ -375,6 +375,9 @@ func resetConfigStartPosInfo(cc *config.CreateConfig, mTable *visitor.MatchTable
 				cc.StartTime = mTable.StartRollBackTime
 			}
 		}
+	} else if mTable.HaveStartPosInfo() {
+		cc.StartLogFile = mTable.StartLogFile
+		cc.StartLogPos = mTable.StartLogPos
 	} else if mTable.HaveStartTime() {
 		cc.StartTime = mTable.StartRollBackTime
 	}
@@ -396,6 +399,9 @@ func resetConfigEndPosInfo(cc *config.CreateConfig, mTable *visitor.MatchTable) 
 				cc.EndTime = mTable.EndRollBackTime
 			}
 		}
+	} else if mTable.HaveEndPosInfo() {
+		cc.EndLogFile = mTable.EndLogFile
+		cc.EndLogPos = mTable.EndLogPos
 	} else if mTable.HaveEndTime() {
 		cc.EndTime = mTable.EndRollBackTime
 	}

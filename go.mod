@@ -9,6 +9,7 @@ require (
 	github.com/daiguadaidai/tidb v0.0.0-20190707132446-e5f2e4b8edc0
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/jinzhu/gorm v1.9.11
+	github.com/openzipkin/zipkin-go v0.1.6 // indirect
 	github.com/siddontang/go-mysql v0.0.0-20191019025932-fba9c9655f7c
 	github.com/spf13/cobra v0.0.5
 )

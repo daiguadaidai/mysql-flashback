@@ -31,7 +31,7 @@ func GetStartPosition(cc *config.CreateConfig, dbc *config.DBConfig) (*models.Po
 		if err != nil {
 			return nil, err
 		}
-		return getPositionByTime(uint32(ts), dbc)
+		return getStartFileByTime(uint32(ts), dbc)
 	}
 
 	return nil, nil
@@ -67,7 +67,7 @@ func checkStartPosInRange(startPos *models.Position) error {
 }
 
 // 通过开始时间获取位点信息
-func getPositionByTime(ts uint32, dbc *config.DBConfig) (*models.Position, error) {
+func getStartFileByTime(ts uint32, dbc *config.DBConfig) (*models.Position, error) {
 	// 如果指定时间大于但前 返回错误.
 	nts := utils.NowTimestamp() // 但前时间戳
 	if int64(ts) > nts {

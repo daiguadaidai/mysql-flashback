@@ -18,6 +18,12 @@ import (
 	"time"
 )
 
+const (
+	START_POS_BY_NONE uint8 = iota
+	START_POS_BY_POS
+	START_POS_BY_TIME
+)
+
 type Creator struct {
 	CC               *config.CreateConfig
 	DBC              *config.DBConfig
@@ -26,8 +32,11 @@ type Creator struct {
 	StartPosition    *models.Position
 	EndPosition      *models.Position
 	CurrentPosition  *models.Position
+	GetStartPosType  uint8
 	CurrentTimestamp uint32
 	CurrentThreadID  uint32
+	StartTime        time.Time
+	StartTimestamp   uint32
 	HaveEndPosition  bool
 	EndTime          time.Time
 	HaveEndTime      bool
@@ -62,6 +71,23 @@ func NewFlashback(sc *config.CreateConfig, dbc *config.DBConfig, mTables []*visi
 	if err != nil {
 		return nil, err
 	}
+
+	// 获取获取位点的类型, 是通过 位点获取, 还是通过时间
+	if ct.CC.HaveStartPosInfo() { // 通过指定位点获取开始位点
+		ct.GetStartPosType = START_POS_BY_POS
+		seelog.Infof("解析binglog开始位点通过指定 开始binlog 位点获取. 开始位点: %s", ct.StartPosition.String())
+	} else if ct.CC.HaveStartTime() { // 通过时间获取开始位点
+		ct.GetStartPosType = START_POS_BY_TIME
+		seelog.Infof("解析binglog开始位点通过指定 开始时间 获取. 开始位点: %s", ct.StartPosition.String())
+		ct.StartTime, err = utils.NewTime(ct.CC.StartTime)
+		if err != nil {
+			return nil, fmt.Errorf("输入的开始时间有问题. %v", err)
+		}
+		ct.StartTimestamp = uint32(ct.StartTime.Unix())
+	} else {
+		return nil, fmt.Errorf("无法获取")
+	}
+
 	// 原sql文件
 	fileName := ct.getSqlFileName("origin_sql")
 	ct.OriSQLFile = fmt.Sprintf("%s/%s", ct.CC.GetSaveDir(), fileName)
@@ -202,6 +228,13 @@ func (this *Creator) runProduceEvent(wg *sync.WaitGroup) {
 	defer wg.Done()
 	defer this.Syncer.Close()
 
+	// 判断是否需要跳过, 位点
+	var isSkip bool
+	if this.GetStartPosType == START_POS_BY_TIME { // 如果开始位点是通过时间获取的就需要执行跳过
+		isSkip = true
+	}
+	seelog.Debugf("是否是需要跳过事件: %v", isSkip)
+
 	pos := mysql.Position{this.StartPosition.File, this.StartPosition.Position}
 	streamer, err := this.Syncer.StartSync(pos)
 	if err != nil {
@@ -222,6 +255,19 @@ produceLoop:
 				seelog.Error(err.Error())
 				this.quit()
 			}
+
+			// 过去掉还没到开始时间的事件
+			if isSkip {
+				// 判断是否到了开始时间
+				if ev.Header.Timestamp < this.StartTimestamp {
+					continue
+				} else {
+					isSkip = false
+					seelog.Infof("停止跳过, 开始生成回滚sql. 时间戳: %d, 时间: %s, 位点: %s:%d", ev.Header.Timestamp,
+						utils.TS2String(int64(ev.Header.Timestamp), utils.TIME_FORMAT), this.StartPosition.File, ev.Header.LogPos)
+				}
+			}
+
 			if err = this.handleEvent(ev); err != nil {
 				seelog.Error(err.Error())
 				this.quit()

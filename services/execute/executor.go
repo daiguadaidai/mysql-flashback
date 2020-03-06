@@ -225,7 +225,6 @@ func (this *Executor) execSQL(wg *sync.WaitGroup, sqlChan chan *SqlContext, sqlE
 		if err := d.ExecDML(sqlCtx.Sql); err != nil {
 			*sqlExecNum = sqlCtx.Tag
 			seelog.Errorf("第%d条sql执行回滚失败. %s. %s", sqlCtx.Tag, sqlCtx.Sql, err.Error())
-			this.cancal()
 			continue
 		}
 

@@ -405,21 +405,24 @@ func (this *Creator) runConsumeEventToOriSQL(wg *sync.WaitGroup) {
 				seelog.Error("没有获取到表需要回滚的表信息(生成原sql数据的时候) %s.", key)
 				continue
 			}
+
+			timeStr := utils.TS2String(int64(ev.Header.Timestamp), utils.TIME_FORMAT) // 获取事件时间
+
 			switch ev.Header.EventType {
 			case replication.WRITE_ROWS_EVENTv0, replication.WRITE_ROWS_EVENTv1, replication.WRITE_ROWS_EVENTv2:
-				if err := this.writeOriInsert(e, f, t); err != nil {
+				if err := this.writeOriInsert(e, f, t, timeStr); err != nil {
 					seelog.Error(err.Error())
 					this.quit()
 					return
 				}
 			case replication.UPDATE_ROWS_EVENTv0, replication.UPDATE_ROWS_EVENTv1, replication.UPDATE_ROWS_EVENTv2:
-				if err := this.writeOriUpdate(e, f, t); err != nil {
+				if err := this.writeOriUpdate(e, f, t, timeStr); err != nil {
 					seelog.Error(err.Error())
 					this.quit()
 					return
 				}
 			case replication.DELETE_ROWS_EVENTv0, replication.DELETE_ROWS_EVENTv1, replication.DELETE_ROWS_EVENTv2:
-				if err := this.writeOriDelete(e, f, t); err != nil {
+				if err := this.writeOriDelete(e, f, t, timeStr); err != nil {
 					seelog.Error(err.Error())
 					this.quit()
 					return
@@ -450,21 +453,24 @@ func (this *Creator) runConsumeEventToRollbackSQL(wg *sync.WaitGroup) {
 				seelog.Error("没有获取到表需要回滚的表信息(生成回滚sql数据的时候) %s.", key)
 				continue
 			}
+
+			timeStr := utils.TS2String(int64(ev.Header.Timestamp), utils.TIME_FORMAT) // 获取事件时间
+
 			switch ev.Header.EventType {
 			case replication.WRITE_ROWS_EVENTv0, replication.WRITE_ROWS_EVENTv1, replication.WRITE_ROWS_EVENTv2:
-				if err := this.writeRollbackDelete(e, f, t); err != nil {
+				if err := this.writeRollbackDelete(e, f, t, timeStr); err != nil {
 					seelog.Error(err.Error())
 					this.quit()
 					return
 				}
 			case replication.UPDATE_ROWS_EVENTv0, replication.UPDATE_ROWS_EVENTv1, replication.UPDATE_ROWS_EVENTv2:
-				if err := this.writeRollbackUpdate(e, f, t); err != nil {
+				if err := this.writeRollbackUpdate(e, f, t, timeStr); err != nil {
 					seelog.Error(err.Error())
 					this.quit()
 					return
 				}
 			case replication.DELETE_ROWS_EVENTv0, replication.DELETE_ROWS_EVENTv1, replication.DELETE_ROWS_EVENTv2:
-				if err := this.writeRollbackInsert(e, f, t); err != nil {
+				if err := this.writeRollbackInsert(e, f, t, timeStr); err != nil {
 					seelog.Error(err.Error())
 					this.quit()
 					return
@@ -479,6 +485,7 @@ func (this *Creator) writeOriInsert(
 	ev *replication.RowsEvent,
 	f *os.File,
 	tbl *schema.Table,
+	timeStr string,
 ) error {
 	for _, row := range ev.Rows {
 		// 过滤该行数据是否匹配 指定的where条件
@@ -490,7 +497,7 @@ func (this *Creator) writeOriInsert(
 		crc32 := tbl.GetPKCrc32(row)
 
 		// 获取最终的placeholder的sql语句   %s %s -> %#v %s
-		insertTemplate := utils.ReplaceSqlPlaceHolder(tbl.InsertTemplate, row, crc32)
+		insertTemplate := utils.ReplaceSqlPlaceHolder(tbl.InsertTemplate, row, crc32, timeStr)
 		// 获取PK数据  "aaa", nil -> "aaa", "NULL"
 		data := utils.ConverSQLType(row)
 		// 将模板和数据组合称最终的SQL
@@ -507,6 +514,7 @@ func (this *Creator) writeOriUpdate(
 	ev *replication.RowsEvent,
 	f *os.File,
 	tbl *schema.Table,
+	timeStr string,
 ) error {
 	recordCount := len(ev.Rows) / 2 // 有多少记录被update
 	for i := 0; i < recordCount; i++ {
@@ -532,7 +540,7 @@ func (this *Creator) writeOriUpdate(
 		crc32 := tbl.GetPKCrc32(ev.Rows[whereIndex])
 
 		// 获取最终的　update 模板
-		updateTemplate := utils.ReplaceSqlPlaceHolder(tbl.UpdateTemplate, placeholderValues, crc32)
+		updateTemplate := utils.ReplaceSqlPlaceHolder(tbl.UpdateTemplate, placeholderValues, crc32, timeStr)
 		data := utils.ConverSQLType(placeholderValues)
 		sql := fmt.Sprintf(updateTemplate, data...)
 		if _, err := f.WriteString(sql); err != nil {
@@ -547,6 +555,7 @@ func (this *Creator) writeOriDelete(
 	ev *replication.RowsEvent,
 	f *os.File,
 	tbl *schema.Table,
+	timeStr string,
 ) error {
 	for _, row := range ev.Rows {
 		// 过滤该行数据是否匹配 指定的where条件
@@ -562,7 +571,7 @@ func (this *Creator) writeOriDelete(
 		crc32 := tbl.GetPKCrc32(row)
 
 		// 获取最终的placeholder的sql语句   %s %s -> %#v %s
-		deleteTemplate := utils.ReplaceSqlPlaceHolder(tbl.DeleteTemplate, placeholderValues, crc32)
+		deleteTemplate := utils.ReplaceSqlPlaceHolder(tbl.DeleteTemplate, placeholderValues, crc32, timeStr)
 		// 获取PK数据  "aaa", nil -> "aaa", "NULL"
 		pkData := utils.ConverSQLType(placeholderValues)
 		// 将模板和数据组合称最终的SQL
@@ -580,6 +589,7 @@ func (this *Creator) writeRollbackInsert(
 	ev *replication.RowsEvent,
 	f *os.File,
 	tbl *schema.Table,
+	timeStr string,
 ) error {
 	for _, row := range ev.Rows {
 		// 过滤该行数据是否匹配 指定的where条件
@@ -591,7 +601,7 @@ func (this *Creator) writeRollbackInsert(
 		crc32 := tbl.GetPKCrc32(row)
 
 		// 获取最终的placeholder的sql语句   %s %s -> %#v %s
-		insertTemplate := utils.ReplaceSqlPlaceHolder(tbl.InsertTemplate, row, crc32)
+		insertTemplate := utils.ReplaceSqlPlaceHolder(tbl.InsertTemplate, row, crc32, timeStr)
 		// 获取PK数据  "aaa", nil -> "aaa", "NULL"
 		data := utils.ConverSQLType(row)
 		// 将模板和数据组合称最终的SQL
@@ -608,6 +618,7 @@ func (this *Creator) writeRollbackUpdate(
 	ev *replication.RowsEvent,
 	f *os.File,
 	tbl *schema.Table,
+	timeStr string,
 ) error {
 	recordCount := len(ev.Rows) / 2 // 有多少记录被update
 	for i := 0; i < recordCount; i++ {
@@ -632,7 +643,7 @@ func (this *Creator) writeRollbackUpdate(
 		// 获取主键值的 crc32 值
 		crc32 := tbl.GetPKCrc32(ev.Rows[whereIndex])
 
-		updateTemplate := utils.ReplaceSqlPlaceHolder(tbl.UpdateTemplate, placeholderValues, crc32)
+		updateTemplate := utils.ReplaceSqlPlaceHolder(tbl.UpdateTemplate, placeholderValues, crc32, timeStr)
 		data := utils.ConverSQLType(placeholderValues)
 		sqlStr := fmt.Sprintf(updateTemplate, data...)
 		if _, err := f.WriteString(sqlStr); err != nil {
@@ -647,6 +658,7 @@ func (this *Creator) writeRollbackDelete(
 	ev *replication.RowsEvent,
 	f *os.File,
 	tbl *schema.Table,
+	timeStr string,
 ) error {
 	for _, row := range ev.Rows {
 		// 过滤该行数据是否匹配 指定的where条件
@@ -662,7 +674,7 @@ func (this *Creator) writeRollbackDelete(
 		crc32 := tbl.GetPKCrc32(row)
 
 		// 获取最终的placeholder的sql语句   %s %s -> %#v %s
-		deleteTemplate := utils.ReplaceSqlPlaceHolder(tbl.DeleteTemplate, placeholderValues, crc32)
+		deleteTemplate := utils.ReplaceSqlPlaceHolder(tbl.DeleteTemplate, placeholderValues, crc32, timeStr)
 		// 获取PK数据  "aaa", nil -> "aaa", "NULL"
 		pkData := utils.ConverSQLType(placeholderValues)
 		// 将模板和数据组合称最终的SQL

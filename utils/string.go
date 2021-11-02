@@ -127,14 +127,16 @@ func ConverSQLType(row []interface{}) []interface{} {
 }
 
 // 将row转化为相关类型interface
-func ReplaceSqlPlaceHolder(sqlStr string, row []interface{}, crc32 uint32) string {
-	rs := make([]interface{}, len(row)+1)
+func ReplaceSqlPlaceHolder(sqlStr string, row []interface{}, crc32 uint32, timeStr string) string {
+	offset := 2
+	rs := make([]interface{}, len(row)+offset)
 	rs[0] = crc32
+	rs[1] = timeStr
 	for i, field := range row {
 		if field == nil {
-			rs[i+1] = "%s"
+			rs[i+offset] = "%s"
 		} else {
-			rs[i+1] = "%#v"
+			rs[i+offset] = "%#v"
 		}
 	}
 

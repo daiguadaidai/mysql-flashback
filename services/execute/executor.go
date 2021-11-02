@@ -243,12 +243,19 @@ func (this *Executor) getSlot(sql string, mod int64) int64 {
 		return 0
 	}
 
-	items := strings.Split(comment, ":")
-	if len(items) != 2 {
+	// crc32:234234, 2020-10-10 00:00:00
+	items := strings.Split(comment, ",")
+	if len(items) < 1 {
 		return 0
 	}
 
-	crc32, err := strconv.ParseInt(strings.TrimSpace(items[1]), 10, 64)
+	// crc32:234234
+	crc32Items := strings.Split(strings.TrimSpace(items[0]), ":")
+	if len(crc32Items) != 2 {
+		return 0
+	}
+
+	crc32, err := strconv.ParseInt(strings.TrimSpace(crc32Items[1]), 10, 64)
 	if err != nil {
 		return 0
 	}

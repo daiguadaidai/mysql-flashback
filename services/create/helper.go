@@ -38,7 +38,7 @@ func GetStartPosition(cc *config.CreateConfig, dbc *config.DBConfig) (*models.Po
 }
 
 // 通过位点信息
-func getPositionByPosInfo(logFile string, logPos uint32) *models.Position {
+func getPositionByPosInfo(logFile string, logPos uint64) *models.Position {
 	return &models.Position{
 		File:     logFile,
 		Position: logPos,

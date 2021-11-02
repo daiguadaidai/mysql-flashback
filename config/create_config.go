@@ -18,9 +18,9 @@ var sc *CreateConfig
 
 type CreateConfig struct {
 	StartLogFile         string
-	StartLogPos          uint32
+	StartLogPos          uint64
 	EndLogFile           string
-	EndLogPos            uint32
+	EndLogPos            uint64
 	StartTime            string
 	EndTime              string
 	RollbackSchemas      []string
@@ -139,7 +139,7 @@ func (this *CreateConfig) checkCondition() error {
 }
 
 // 开始位点小于其他位点
-func (this *CreateConfig) StartPosInfoLessThan(otherStartFile string, otherStartPos uint32) bool {
+func (this *CreateConfig) StartPosInfoLessThan(otherStartFile string, otherStartPos uint64) bool {
 	if this.StartLogFile < otherStartFile {
 		return true
 	} else if this.StartLogFile == otherStartFile {
@@ -151,7 +151,7 @@ func (this *CreateConfig) StartPosInfoLessThan(otherStartFile string, otherStart
 }
 
 // 结束位点大于其他位点
-func (this *CreateConfig) EndPostInfoRatherThan(otherEndFile string, otherEndPos uint32) bool {
+func (this *CreateConfig) EndPostInfoRatherThan(otherEndFile string, otherEndPos uint64) bool {
 	if this.EndLogFile > otherEndFile {
 		return true
 	} else if this.EndLogFile == otherEndFile {

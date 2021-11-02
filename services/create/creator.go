@@ -235,7 +235,7 @@ func (this *Creator) runProduceEvent(wg *sync.WaitGroup) {
 	}
 	seelog.Debugf("是否是需要跳过事件: %v", isSkip)
 
-	pos := mysql.Position{this.StartPosition.File, this.StartPosition.Position}
+	pos := mysql.Position{this.StartPosition.File, uint32(this.StartPosition.Position)}
 	streamer, err := this.Syncer.StartSync(pos)
 	if err != nil {
 		seelog.Error(err.Error())
@@ -281,7 +281,7 @@ produceLoop:
 
 // 处理binlog事件
 func (this *Creator) handleEvent(ev *replication.BinlogEvent) error {
-	this.CurrentPosition.Position = ev.Header.LogPos // 设置当前位点
+	this.CurrentPosition.Position = uint64(ev.Header.LogPos) // 设置当前位点
 	this.CurrentTimestamp = ev.Header.Timestamp
 
 	// 判断是否到达了结束位点

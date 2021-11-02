@@ -10,7 +10,7 @@ import (
 
 type Position struct {
 	File              string    `gorm:"column:File"`
-	Position          uint32    `gorm:"column:Position"`
+	Position          uint64    `gorm:"column:Position"`
 	Binlog_Do_DB      string    `gorm:"column:Binlog_Do_DB"`
 	Binlog_Ignore_DB  string    `gorm:"column:Binlog_Ignore_DB"`
 	Executed_Gtid_Set string    `gorm:"column:Executed_Gtid_Set"`

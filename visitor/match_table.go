@@ -14,9 +14,9 @@ type MatchTable struct {
 	ColumnNames       []string
 	AllColumn         bool
 	StartLogFile      string
-	StartLogPos       uint32
+	StartLogPos       uint64
 	EndLogFile        string
-	EndLogPos         uint32
+	EndLogPos         uint64
 	StartRollBackTime string
 	EndRollBackTime   string
 	ThreadId          uint32

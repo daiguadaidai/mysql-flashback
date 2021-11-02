@@ -2,7 +2,7 @@ package models
 
 type BinaryLog struct {
 	LogName  string `gorm:"column:Log_name"`
-	FileSize uint32 `gorm:"column:File_size"`
+	FileSize uint64 `gorm:"column:File_size"`
 }
 
 // 比较两个BinaryLog记录是否一样

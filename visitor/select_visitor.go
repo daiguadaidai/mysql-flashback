@@ -120,7 +120,7 @@ func (this *SelectVisitor) leaveBinaryOperationExpr(node *ast.BinaryOperationExp
 			if err != nil {
 				return fmt.Errorf("SQL where 条件 start_log_pos 值不能转化为 uint64")
 			}
-			this.MTable.StartLogPos = uint32(pos)
+			this.MTable.StartLogPos = uint64(pos)
 		case "end_log_file":
 			this.PosInfoColCnt++
 			this.EliminateOpCnt++
@@ -132,7 +132,7 @@ func (this *SelectVisitor) leaveBinaryOperationExpr(node *ast.BinaryOperationExp
 			if err != nil {
 				return fmt.Errorf("SQL where 条件 end_log_pos 值不能转化为 uint64")
 			}
-			this.MTable.EndLogPos = uint32(pos)
+			this.MTable.EndLogPos = uint64(pos)
 		case "start_rollback_time":
 			this.PosInfoColCnt++
 			this.EliminateOpCnt++

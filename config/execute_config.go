@@ -1,6 +1,9 @@
 package config
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 const (
 	EXECUTE_PARALLER = 1
@@ -29,5 +32,9 @@ func (this *ExecuteConfig) checkCondition() error {
 		this.Paraller = EXECUTE_PARALLER
 	}
 
-	return fmt.Errorf("请指定需要执行的文件或通过接口执行的相关参数")
+	if len(strings.TrimSpace(this.FilePath)) == 0 {
+		return fmt.Errorf("请指定需要执行的文件")
+	}
+
+	return nil
 }

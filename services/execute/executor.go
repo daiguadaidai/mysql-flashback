@@ -99,13 +99,13 @@ func (this *Executor) readFile(wg *sync.WaitGroup) {
 
 	fileInfo, err := os.Stat(this.ec.FilePath)
 	if err != nil {
-		seelog.Errorf("获取文件信息失败: %s", this.ec.FilePath)
+		seelog.Errorf("获取文件信息失败: %s. %v", this.ec.FilePath, err.Error())
 		this.closeSQLChans()
 		return
 	}
 	f, err := os.Open(this.ec.FilePath)
 	if err != nil {
-		seelog.Errorf("打开回滚sql文件失败: %s", this.ec.FilePath)
+		seelog.Errorf("打开回滚sql文件失败: %s. %v", this.ec.FilePath, err.Error())
 		this.closeSQLChans()
 		return
 	}
@@ -124,7 +124,7 @@ func (this *Executor) readFile(wg *sync.WaitGroup) {
 		default:
 		}
 		if err = this.generalSQL(f, unReadSize, defautBufSize, &part, &lastRecords); err != nil {
-			seelog.Errorf("打开回滚sql文件失败: %s", this.ec.FilePath)
+			seelog.Errorf("打开回滚sql文件失败: %s. %v", this.ec.FilePath, err.Error())
 			this.closeSQLChans()
 			return
 		}

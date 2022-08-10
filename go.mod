@@ -12,4 +12,5 @@ require (
 	github.com/openzipkin/zipkin-go v0.1.6 // indirect
 	github.com/siddontang/go-mysql v0.0.0-20191019025932-fba9c9655f7c
 	github.com/spf13/cobra v0.0.5
+	golang.org/x/sys v0.0.0-20220808155132-1c4a2a72c664 // indirect
 )

@@ -99,6 +99,7 @@ Example:
 ./mysql-flashback execute \
     --filepath="/tmp/test.sql" \
     --paraller=8 \
+    --sql-log-bin=false \
     --db-host="127.0.0.1" \
     --db-port=3306 \
     --db-username="root" \
@@ -158,6 +159,7 @@ func addCreateCMD() {
 	createCmd.PersistentFlags().IntVar(&cdbc.MaxOpenConns, "db-max-open-conns", config.DB_MAX_OPEN_CONNS, "数据库最大连接数")
 	createCmd.PersistentFlags().BoolVar(&cdbc.AutoCommit, "db-auto-commit", config.DB_AUTO_COMMIT, "数据库自动提交")
 	createCmd.PersistentFlags().BoolVar(&cdbc.PasswordIsDecrypt, "db-password-is-decrypt", config.DB_PASSWORD_IS_DECRYPT, "数据库密码是否需要解密")
+	createCmd.PersistentFlags().BoolVar(&cdbc.SqlLogBin, "sql-log-bin", config.SQL_LOG_BIN, "执行sql是否记录binlog")
 }
 
 // 添加创建回滚SQL子命令
@@ -184,4 +186,5 @@ func addExecuteCMD() {
 	executeCmd.PersistentFlags().IntVar(&edbc.MaxOpenConns, "db-max-open-conns", config.DB_MAX_OPEN_CONNS, "数据库最大连接数")
 	executeCmd.PersistentFlags().BoolVar(&edbc.AutoCommit, "db-auto-commit", config.DB_AUTO_COMMIT, "数据库自动提交")
 	executeCmd.PersistentFlags().BoolVar(&edbc.PasswordIsDecrypt, "db-password-is-decrypt", config.DB_PASSWORD_IS_DECRYPT, "数据库密码是否需要解密")
+	executeCmd.PersistentFlags().BoolVar(&cdbc.SqlLogBin, "sql-log-bin", config.SQL_LOG_BIN, "执行sql是否记录binlog")
 }

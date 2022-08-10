@@ -22,6 +22,7 @@ const (
 	DB_CHARSET             = "utf8mb4"
 	DB_TIMEOUT             = 10
 	DB_PASSWORD_IS_DECRYPT = true
+	SQL_LOG_BIN            = true
 )
 
 var dbConfig *DBConfig
@@ -39,11 +40,12 @@ type DBConfig struct {
 	AllowOldPasswords int
 	AutoCommit        bool
 	PasswordIsDecrypt bool
+	SqlLogBin         bool
 }
 
 func (this *DBConfig) GetDataSource() string {
 	dataSource := fmt.Sprintf(
-		"%v:%v@tcp(%v:%v)/%v?charset=%v&allowOldPasswords=%v&timeout=%vs&autocommit=%v&parseTime=True&loc=Local",
+		"%v:%v@tcp(%v:%v)/%v?charset=%v&allowOldPasswords=%v&timeout=%vs&autocommit=%v&parseTime=True&loc=Local&sql_log_bin=%v",
 		this.Username,
 		this.GetPassword(),
 		this.Host,
@@ -53,6 +55,7 @@ func (this *DBConfig) GetDataSource() string {
 		this.AllowOldPasswords,
 		this.Timeout,
 		this.AutoCommit,
+		this.SqlLogBin,
 	)
 
 	return dataSource

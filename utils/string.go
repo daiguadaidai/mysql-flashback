@@ -104,7 +104,7 @@ func SqlExprPlaceholderByColumns(names []string, symbol string, holder string, s
 }
 
 // 将row转化为相关类型interface
-func ConverSQLType(row []interface{}) []interface{} {
+func ConverSQLType(row []interface{}) ([]interface{}, error) {
 	rs := make([]interface{}, len(row))
 	for i, field := range row {
 		if field == nil {
@@ -113,17 +113,24 @@ func ConverSQLType(row []interface{}) []interface{} {
 		}
 		switch uintData := field.(type) {
 		case []uint8:
-			rawBytes := make([]byte, len(uintData))
-			for j, b := range uintData {
-				rawBytes[j] = byte(b)
+			strData := string(uintData)
+			sqlValue, err := GetSqlStrValue(strData, "'")
+			if err != nil {
+				return nil, fmt.Errorf("字段数据转化成sql字符串出错. %v", err.Error())
 			}
-			rs[i] = string(rawBytes)
+			rs[i] = sqlValue
+		case string:
+			sqlValue, err := GetSqlStrValue(uintData, "'")
+			if err != nil {
+				return nil, fmt.Errorf("字段数据转化成sql字符串出错. %v", err.Error())
+			}
+			rs[i] = sqlValue
 		default:
 			rs[i] = field
 		}
 	}
 
-	return rs
+	return rs, nil
 }
 
 // 将row转化为相关类型interface
@@ -132,12 +139,8 @@ func ReplaceSqlPlaceHolder(sqlStr string, row []interface{}, crc32 uint32, timeS
 	rs := make([]interface{}, len(row)+offset)
 	rs[0] = crc32
 	rs[1] = timeStr
-	for i, field := range row {
-		if field == nil {
-			rs[i+offset] = "%s"
-		} else {
-			rs[i+offset] = "%#v"
-		}
+	for i, _ := range row {
+		rs[i+offset] = "%v"
 	}
 
 	return fmt.Sprintf(sqlStr, rs...)
@@ -259,4 +262,48 @@ func GetSQLStmtHearderComment(stmt *string) string {
 	}
 
 	return ""
+}
+
+/*
+data: 源数据
+warpStr: 最后元数据需要使用什么包括
+如: data: aabb, wrapStr: '
+最后: 'aabb'
+*/
+func GetSqlStrValue(data string, wrapStr string) (string, error) {
+	oriStrRunes := []rune(data)
+
+	var sb strings.Builder
+	// 添加开头单引号
+	_, err := fmt.Fprint(&sb, wrapStr)
+	if err != nil {
+		return "", err
+	}
+	for _, oriStrRune := range oriStrRunes {
+		var s string
+
+		switch oriStrRune {
+		case 34: // " 双引号
+			s = "\\\""
+		case 39: // ' 单引号
+			s = "\\'"
+		case 92: // \ 反斜杠
+			s = "\\\\"
+		default:
+			s = string(oriStrRune)
+		}
+
+		_, err := fmt.Fprint(&sb, s)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	// 添加结尾单引号
+	_, err = fmt.Fprint(&sb, wrapStr)
+	if err != nil {
+		return "", err
+	}
+
+	return sb.String(), nil
 }

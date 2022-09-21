@@ -299,7 +299,9 @@ func (this *Creator) handleEvent(ev *replication.BinlogEvent) error {
 	case *replication.QueryEvent:
 		this.CurrentThreadID = e.SlaveProxyID
 	case *replication.TableMapEvent:
-		this.handleMapEvent(e)
+		if err := this.handleMapEvent(e); err != nil {
+			return err
+		}
 	case *replication.RowsEvent:
 		if err := this.produceRowEvent(ev); err != nil {
 			return err
@@ -499,11 +501,14 @@ func (this *Creator) writeOriInsert(
 		// 获取最终的placeholder的sql语句   %s %s -> %#v %s
 		insertTemplate := utils.ReplaceSqlPlaceHolder(tbl.InsertTemplate, row, crc32, timeStr)
 		// 获取PK数据  "aaa", nil -> "aaa", "NULL"
-		data := utils.ConverSQLType(row)
+		data, err := utils.ConverSQLType(row)
+		if err != nil {
+			return fmt.Errorf("[writeOriInsert] 将一行所有字段数据转化成sql字符串出错. %v", err.Error())
+		}
 		// 将模板和数据组合称最终的SQL
 		sqlStr := fmt.Sprintf(insertTemplate, data...)
 		if _, err := f.WriteString(sqlStr); err != nil {
-			return err
+			return fmt.Errorf("[writeOriInsert] 将sql写入文件出错. %v", err.Error())
 		}
 	}
 	return nil
@@ -541,10 +546,14 @@ func (this *Creator) writeOriUpdate(
 
 		// 获取最终的　update 模板
 		updateTemplate := utils.ReplaceSqlPlaceHolder(tbl.UpdateTemplate, placeholderValues, crc32, timeStr)
-		data := utils.ConverSQLType(placeholderValues)
+		data, err := utils.ConverSQLType(placeholderValues)
+		if err != nil {
+			return fmt.Errorf("[writeOriUpdate] 将一行所有字段数据转化成sql字符串出错. %v", err.Error())
+		}
+
 		sql := fmt.Sprintf(updateTemplate, data...)
 		if _, err := f.WriteString(sql); err != nil {
-			return err
+			return fmt.Errorf("[writeOriUpdate] 将sql写入文件出错. %v", err.Error())
 		}
 	}
 	return nil
@@ -573,12 +582,15 @@ func (this *Creator) writeOriDelete(
 		// 获取最终的placeholder的sql语句   %s %s -> %#v %s
 		deleteTemplate := utils.ReplaceSqlPlaceHolder(tbl.DeleteTemplate, placeholderValues, crc32, timeStr)
 		// 获取PK数据  "aaa", nil -> "aaa", "NULL"
-		pkData := utils.ConverSQLType(placeholderValues)
+		pkData, err := utils.ConverSQLType(placeholderValues)
+		if err != nil {
+			return fmt.Errorf("[writeOriDelete] 将主键字段数据转化成sql字符串出错. %v", err.Error())
+		}
 		// 将模板和数据组合称最终的SQL
 		sqlStr := fmt.Sprintf(deleteTemplate, pkData...)
 
 		if _, err := f.WriteString(sqlStr); err != nil {
-			return err
+			return fmt.Errorf("[writeOriDelete] 将sql写入文件出错. %v", err.Error())
 		}
 	}
 	return nil
@@ -603,11 +615,14 @@ func (this *Creator) writeRollbackInsert(
 		// 获取最终的placeholder的sql语句   %s %s -> %#v %s
 		insertTemplate := utils.ReplaceSqlPlaceHolder(tbl.InsertTemplate, row, crc32, timeStr)
 		// 获取PK数据  "aaa", nil -> "aaa", "NULL"
-		data := utils.ConverSQLType(row)
+		data, err := utils.ConverSQLType(row)
+		if err != nil {
+			return fmt.Errorf("[writeRollbackInsert] 将一行所有字段数据转化成sql字符串出错. %v", err.Error())
+		}
 		// 将模板和数据组合称最终的SQL
 		sqlStr := fmt.Sprintf(insertTemplate, data...)
 		if _, err := f.WriteString(sqlStr); err != nil {
-			return err
+			return fmt.Errorf("[writeRollbackInsert] 将sql写入文件出错. %v", err.Error())
 		}
 	}
 	return nil
@@ -644,10 +659,13 @@ func (this *Creator) writeRollbackUpdate(
 		crc32 := tbl.GetPKCrc32(ev.Rows[whereIndex])
 
 		updateTemplate := utils.ReplaceSqlPlaceHolder(tbl.UpdateTemplate, placeholderValues, crc32, timeStr)
-		data := utils.ConverSQLType(placeholderValues)
+		data, err := utils.ConverSQLType(placeholderValues)
+		if err != nil {
+			return fmt.Errorf("[writeRollbackUpdate] 将一行所有字段数据转化成sql字符串出错. %v", err.Error())
+		}
 		sqlStr := fmt.Sprintf(updateTemplate, data...)
 		if _, err := f.WriteString(sqlStr); err != nil {
-			return err
+			return fmt.Errorf("[writeRollbackUpdate] 将sql写入文件出错. %v", err.Error())
 		}
 	}
 	return nil
@@ -676,12 +694,15 @@ func (this *Creator) writeRollbackDelete(
 		// 获取最终的placeholder的sql语句   %s %s -> %#v %s
 		deleteTemplate := utils.ReplaceSqlPlaceHolder(tbl.DeleteTemplate, placeholderValues, crc32, timeStr)
 		// 获取PK数据  "aaa", nil -> "aaa", "NULL"
-		pkData := utils.ConverSQLType(placeholderValues)
+		pkData, err := utils.ConverSQLType(placeholderValues)
+		if err != nil {
+			return fmt.Errorf("[writeRollbackDelete] 将主键字段数据转化成sql字符串出错. %v", err.Error())
+		}
 		// 将模板和数据组合称最终的SQL
 		sqlStr := fmt.Sprintf(deleteTemplate, pkData...)
 
 		if _, err := f.WriteString(sqlStr); err != nil {
-			return err
+			return fmt.Errorf("[writeRollbackDelete] 将sql写入文件出错. %v", err.Error())
 		}
 	}
 	return nil

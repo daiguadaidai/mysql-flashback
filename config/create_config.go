@@ -31,7 +31,7 @@ type CreateConfig struct {
 	EnableRollbackInsert bool
 	EnableRollbackDelete bool
 	SaveDir              string
-	MatchSql             string // 使用sql语句来匹配需要查询的时间段或者
+	MatchSqls            []string // 使用sql语句来匹配需要查询的时间段或者
 }
 
 func NewStartConfig() *CreateConfig {

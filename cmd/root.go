@@ -144,7 +144,7 @@ func addCreateCMD() {
 	createCmd.PersistentFlags().BoolVar(&cc.EnableRollbackUpdate, "enable-rollback-update", config.ENABLE_ROLLBACK_UPDATE, "是否启用回滚 update")
 	createCmd.PersistentFlags().BoolVar(&cc.EnableRollbackDelete, "enable-rollback-delete", config.ENABLE_ROLLBACK_DELETE, "是否启用回滚 delete")
 	createCmd.PersistentFlags().StringVar(&cc.SaveDir, "save-dir", "", "相关文件保存的路径")
-	createCmd.PersistentFlags().StringVar(&cc.MatchSql, "match-sql", "", "使用简单的 SELECT 语句来匹配需要的字段和记录")
+	createCmd.PersistentFlags().StringSliceVar(&cc.MatchSqls, "match-sql", make([]string, 0, 1), "使用简单的 SELECT 语句来匹配需要的字段和记录")
 
 	cdbc = new(config.DBConfig)
 	// 链接的数据库配置

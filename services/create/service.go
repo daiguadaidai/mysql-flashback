@@ -18,12 +18,19 @@ func Start(cc *config.CreateConfig, dbc *config.DBConfig) {
 
 	// 解析sql并且获取
 	var mTables []*visitor.MatchTable
-	var err error
-	if strings.TrimSpace(cc.MatchSql) != "" {
-		mTables, err = visitor.GetMatchTables(cc.MatchSql)
-		if err != nil {
-			seelog.Errorf(err.Error())
-			syscall.Exit(1)
+	if len(cc.MatchSqls) > 0 {
+		for _, matchSql := range cc.MatchSqls {
+			if strings.TrimSpace(matchSql) == "" {
+				continue
+			}
+
+			tmpMTables, err := visitor.GetMatchTables(matchSql)
+			if err != nil {
+				seelog.Errorf(err.Error())
+				syscall.Exit(1)
+			}
+
+			mTables = append(mTables, tmpMTables...)
 		}
 		// 重置 位点信息 信息
 		resetPosInfo(cc, mTables)

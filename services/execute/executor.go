@@ -243,7 +243,7 @@ func (this *Executor) getSlot(sql string, mod int64) int64 {
 		return 0
 	}
 
-	// crc32:234234, 2020-10-10 00:00:00
+	// crc32:234234, 2020-10-10 00:00:00, threadId:222
 	items := strings.Split(comment, ",")
 	if len(items) < 1 {
 		return 0

@@ -142,7 +142,7 @@ func (this *Table) InitSQLTemplate() {
 
 // 初始化 insert sql 模板
 func (this *Table) initInsertTemplate() {
-	template := "/* crc32:%s, %s, threadId: %s */ INSERT INTO `%s`.`%s`(`%s`) VALUES(%s);\n"
+	template := "/* crc32:%s, %s, threadId:%s */ INSERT INTO `%s`.`%s`(`%s`) VALUES(%s);\n"
 	this.InsertTemplate = fmt.Sprintf(template, "%d", "%s", "%d", this.SchemaName, this.TableName,
 		strings.Join(this.ColumnNames, "`, `"),
 		utils.StrRepeat("%s", len(this.ColumnNames), ", "))
@@ -150,7 +150,7 @@ func (this *Table) initInsertTemplate() {
 
 // 初始化 update sql 模板
 func (this *Table) initUpdateTemplate() {
-	template := "/* crc32:%s, %s, threadId: %s */ UPDATE `%s`.`%s` SET %s WHERE %s;\n"
+	template := "/* crc32:%s, %s, threadId:%s */ UPDATE `%s`.`%s` SET %s WHERE %s;\n"
 	this.UpdateTemplate = fmt.Sprintf(template, "%d", "%s", "%d", this.SchemaName, this.TableName,
 		utils.SqlExprPlaceholderByColumns(this.UseColumnNames, "=", "%s", ", "),
 		utils.SqlExprPlaceholderByColumns(this.PKColumnNames, "=", "%s", " AND "))
@@ -158,7 +158,7 @@ func (this *Table) initUpdateTemplate() {
 
 // 初始化 delete sql 模板
 func (this *Table) initDeleteTemplate() {
-	template := "/* crc32:%s, %s, threadId: %s */ DELETE FROM `%s`.`%s` WHERE %s;\n"
+	template := "/* crc32:%s, %s, threadId:%s */ DELETE FROM `%s`.`%s` WHERE %s;\n"
 	this.DeleteTemplate = fmt.Sprintf(template, "%d", "%s", "%d", this.SchemaName, this.TableName,
 		utils.SqlExprPlaceholderByColumns(this.PKColumnNames, "=", "%s", " AND "))
 }

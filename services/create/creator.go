@@ -43,8 +43,8 @@ type Creator struct {
 	EndTimestamp     uint32
 	RollBackTableMap map[string]*schema.Table
 	RollbackType
-	OriRowsEventChan            chan *replication.BinlogEvent
-	RollbackRowsEventChan       chan *replication.BinlogEvent
+	OriRowsEventChan            chan *models.CustomBinlogEvent
+	RollbackRowsEventChan       chan *models.CustomBinlogEvent
 	Successful                  bool
 	OriRowsEventChanClosed      bool
 	RollbackRowsEventChanClosed bool
@@ -61,8 +61,8 @@ func NewFlashback(sc *config.CreateConfig, dbc *config.DBConfig, mTables []*visi
 	ct := new(Creator)
 	ct.CC = sc
 	ct.DBC = dbc
-	ct.OriRowsEventChan = make(chan *replication.BinlogEvent, 1000)
-	ct.RollbackRowsEventChan = make(chan *replication.BinlogEvent, 1000)
+	ct.OriRowsEventChan = make(chan *models.CustomBinlogEvent, 1000)
+	ct.RollbackRowsEventChan = make(chan *models.CustomBinlogEvent, 1000)
 	ct.Qiut = make(chan bool)
 	ct.CurrentTable = new(models.DBTable)
 	ct.CurrentPosition = new(models.Position)
@@ -354,7 +354,7 @@ func (this *Creator) handleMapEvent(ev *replication.TableMapEvent) error {
 func (this *Creator) produceRowEvent(ev *replication.BinlogEvent) error {
 	// 判断是否是指定的 thread id
 	if this.CC.ThreadID != 0 && this.CC.ThreadID != this.CurrentThreadID {
-		//  没有指定, 指定了 thread id, 但是 event thread id 不等于 指定的 thread id
+		//  指定了 thread id, 但是 event thread id 不等于 指定的 thread id
 		return nil
 	}
 
@@ -380,8 +380,14 @@ func (this *Creator) produceRowEvent(ev *replication.BinlogEvent) error {
 			return nil
 		}
 	}
-	this.OriRowsEventChan <- ev
-	this.RollbackRowsEventChan <- ev
+
+	customEvent := &models.CustomBinlogEvent{
+		Event:    ev,
+		ThreadId: this.CurrentThreadID,
+	}
+
+	this.OriRowsEventChan <- customEvent
+	this.RollbackRowsEventChan <- customEvent
 
 	return nil
 }
@@ -399,7 +405,7 @@ func (this *Creator) runConsumeEventToOriSQL(wg *sync.WaitGroup) {
 	defer f.Close()
 
 	for ev := range this.OriRowsEventChan {
-		switch e := ev.Event.(type) {
+		switch e := ev.Event.Event.(type) {
 		case *replication.RowsEvent:
 			key := fmt.Sprintf("%s.%s", string(e.Table.Schema), string(e.Table.Table))
 			t, ok := this.RollBackTableMap[key]
@@ -408,23 +414,23 @@ func (this *Creator) runConsumeEventToOriSQL(wg *sync.WaitGroup) {
 				continue
 			}
 
-			timeStr := utils.TS2String(int64(ev.Header.Timestamp), utils.TIME_FORMAT) // 获取事件时间
+			timeStr := utils.TS2String(int64(ev.Event.Header.Timestamp), utils.TIME_FORMAT) // 获取事件时间
 
-			switch ev.Header.EventType {
+			switch ev.Event.Header.EventType {
 			case replication.WRITE_ROWS_EVENTv0, replication.WRITE_ROWS_EVENTv1, replication.WRITE_ROWS_EVENTv2:
-				if err := this.writeOriInsert(e, f, t, timeStr); err != nil {
+				if err := this.writeOriInsert(e, f, t, timeStr, ev.ThreadId); err != nil {
 					seelog.Error(err.Error())
 					this.quit()
 					return
 				}
 			case replication.UPDATE_ROWS_EVENTv0, replication.UPDATE_ROWS_EVENTv1, replication.UPDATE_ROWS_EVENTv2:
-				if err := this.writeOriUpdate(e, f, t, timeStr); err != nil {
+				if err := this.writeOriUpdate(e, f, t, timeStr, ev.ThreadId); err != nil {
 					seelog.Error(err.Error())
 					this.quit()
 					return
 				}
 			case replication.DELETE_ROWS_EVENTv0, replication.DELETE_ROWS_EVENTv1, replication.DELETE_ROWS_EVENTv2:
-				if err := this.writeOriDelete(e, f, t, timeStr); err != nil {
+				if err := this.writeOriDelete(e, f, t, timeStr, ev.ThreadId); err != nil {
 					seelog.Error(err.Error())
 					this.quit()
 					return
@@ -447,7 +453,7 @@ func (this *Creator) runConsumeEventToRollbackSQL(wg *sync.WaitGroup) {
 	defer f.Close()
 
 	for ev := range this.RollbackRowsEventChan {
-		switch e := ev.Event.(type) {
+		switch e := ev.Event.Event.(type) {
 		case *replication.RowsEvent:
 			key := fmt.Sprintf("%s.%s", string(e.Table.Schema), string(e.Table.Table))
 			t, ok := this.RollBackTableMap[key]
@@ -456,23 +462,23 @@ func (this *Creator) runConsumeEventToRollbackSQL(wg *sync.WaitGroup) {
 				continue
 			}
 
-			timeStr := utils.TS2String(int64(ev.Header.Timestamp), utils.TIME_FORMAT) // 获取事件时间
+			timeStr := utils.TS2String(int64(ev.Event.Header.Timestamp), utils.TIME_FORMAT) // 获取事件时间
 
-			switch ev.Header.EventType {
+			switch ev.Event.Header.EventType {
 			case replication.WRITE_ROWS_EVENTv0, replication.WRITE_ROWS_EVENTv1, replication.WRITE_ROWS_EVENTv2:
-				if err := this.writeRollbackDelete(e, f, t, timeStr); err != nil {
+				if err := this.writeRollbackDelete(e, f, t, timeStr, ev.ThreadId); err != nil {
 					seelog.Error(err.Error())
 					this.quit()
 					return
 				}
 			case replication.UPDATE_ROWS_EVENTv0, replication.UPDATE_ROWS_EVENTv1, replication.UPDATE_ROWS_EVENTv2:
-				if err := this.writeRollbackUpdate(e, f, t, timeStr); err != nil {
+				if err := this.writeRollbackUpdate(e, f, t, timeStr, ev.ThreadId); err != nil {
 					seelog.Error(err.Error())
 					this.quit()
 					return
 				}
 			case replication.DELETE_ROWS_EVENTv0, replication.DELETE_ROWS_EVENTv1, replication.DELETE_ROWS_EVENTv2:
-				if err := this.writeRollbackInsert(e, f, t, timeStr); err != nil {
+				if err := this.writeRollbackInsert(e, f, t, timeStr, ev.ThreadId); err != nil {
 					seelog.Error(err.Error())
 					this.quit()
 					return
@@ -488,6 +494,7 @@ func (this *Creator) writeOriInsert(
 	f *os.File,
 	tbl *schema.Table,
 	timeStr string,
+	threadId uint32,
 ) error {
 	for _, row := range ev.Rows {
 		// 过滤该行数据是否匹配 指定的where条件
@@ -499,7 +506,7 @@ func (this *Creator) writeOriInsert(
 		crc32 := tbl.GetPKCrc32(row)
 
 		// 获取最终的placeholder的sql语句   %s %s -> %#v %s
-		insertTemplate := utils.ReplaceSqlPlaceHolder(tbl.InsertTemplate, row, crc32, timeStr)
+		insertTemplate := utils.ReplaceSqlPlaceHolder(tbl.InsertTemplate, row, crc32, timeStr, threadId)
 		// 获取PK数据  "aaa", nil -> "aaa", "NULL"
 		data, err := utils.ConverSQLType(row)
 		if err != nil {
@@ -520,6 +527,7 @@ func (this *Creator) writeOriUpdate(
 	f *os.File,
 	tbl *schema.Table,
 	timeStr string,
+	threadId uint32,
 ) error {
 	recordCount := len(ev.Rows) / 2 // 有多少记录被update
 	for i := 0; i < recordCount; i++ {
@@ -545,7 +553,7 @@ func (this *Creator) writeOriUpdate(
 		crc32 := tbl.GetPKCrc32(ev.Rows[whereIndex])
 
 		// 获取最终的　update 模板
-		updateTemplate := utils.ReplaceSqlPlaceHolder(tbl.UpdateTemplate, placeholderValues, crc32, timeStr)
+		updateTemplate := utils.ReplaceSqlPlaceHolder(tbl.UpdateTemplate, placeholderValues, crc32, timeStr, threadId)
 		data, err := utils.ConverSQLType(placeholderValues)
 		if err != nil {
 			return fmt.Errorf("[writeOriUpdate] 将一行所有字段数据转化成sql字符串出错. %v", err.Error())
@@ -565,6 +573,7 @@ func (this *Creator) writeOriDelete(
 	f *os.File,
 	tbl *schema.Table,
 	timeStr string,
+	threadId uint32,
 ) error {
 	for _, row := range ev.Rows {
 		// 过滤该行数据是否匹配 指定的where条件
@@ -580,7 +589,7 @@ func (this *Creator) writeOriDelete(
 		crc32 := tbl.GetPKCrc32(row)
 
 		// 获取最终的placeholder的sql语句   %s %s -> %#v %s
-		deleteTemplate := utils.ReplaceSqlPlaceHolder(tbl.DeleteTemplate, placeholderValues, crc32, timeStr)
+		deleteTemplate := utils.ReplaceSqlPlaceHolder(tbl.DeleteTemplate, placeholderValues, crc32, timeStr, threadId)
 		// 获取PK数据  "aaa", nil -> "aaa", "NULL"
 		pkData, err := utils.ConverSQLType(placeholderValues)
 		if err != nil {
@@ -602,6 +611,7 @@ func (this *Creator) writeRollbackInsert(
 	f *os.File,
 	tbl *schema.Table,
 	timeStr string,
+	threadId uint32,
 ) error {
 	for _, row := range ev.Rows {
 		// 过滤该行数据是否匹配 指定的where条件
@@ -613,7 +623,7 @@ func (this *Creator) writeRollbackInsert(
 		crc32 := tbl.GetPKCrc32(row)
 
 		// 获取最终的placeholder的sql语句   %s %s -> %#v %s
-		insertTemplate := utils.ReplaceSqlPlaceHolder(tbl.InsertTemplate, row, crc32, timeStr)
+		insertTemplate := utils.ReplaceSqlPlaceHolder(tbl.InsertTemplate, row, crc32, timeStr, threadId)
 		// 获取PK数据  "aaa", nil -> "aaa", "NULL"
 		data, err := utils.ConverSQLType(row)
 		if err != nil {
@@ -634,6 +644,7 @@ func (this *Creator) writeRollbackUpdate(
 	f *os.File,
 	tbl *schema.Table,
 	timeStr string,
+	threadId uint32,
 ) error {
 	recordCount := len(ev.Rows) / 2 // 有多少记录被update
 	for i := 0; i < recordCount; i++ {
@@ -658,7 +669,7 @@ func (this *Creator) writeRollbackUpdate(
 		// 获取主键值的 crc32 值
 		crc32 := tbl.GetPKCrc32(ev.Rows[whereIndex])
 
-		updateTemplate := utils.ReplaceSqlPlaceHolder(tbl.UpdateTemplate, placeholderValues, crc32, timeStr)
+		updateTemplate := utils.ReplaceSqlPlaceHolder(tbl.UpdateTemplate, placeholderValues, crc32, timeStr, threadId)
 		data, err := utils.ConverSQLType(placeholderValues)
 		if err != nil {
 			return fmt.Errorf("[writeRollbackUpdate] 将一行所有字段数据转化成sql字符串出错. %v", err.Error())
@@ -677,6 +688,7 @@ func (this *Creator) writeRollbackDelete(
 	f *os.File,
 	tbl *schema.Table,
 	timeStr string,
+	threadId uint32,
 ) error {
 	for _, row := range ev.Rows {
 		// 过滤该行数据是否匹配 指定的where条件
@@ -692,7 +704,7 @@ func (this *Creator) writeRollbackDelete(
 		crc32 := tbl.GetPKCrc32(row)
 
 		// 获取最终的placeholder的sql语句   %s %s -> %#v %s
-		deleteTemplate := utils.ReplaceSqlPlaceHolder(tbl.DeleteTemplate, placeholderValues, crc32, timeStr)
+		deleteTemplate := utils.ReplaceSqlPlaceHolder(tbl.DeleteTemplate, placeholderValues, crc32, timeStr, threadId)
 		// 获取PK数据  "aaa", nil -> "aaa", "NULL"
 		pkData, err := utils.ConverSQLType(placeholderValues)
 		if err != nil {

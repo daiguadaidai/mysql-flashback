@@ -134,11 +134,12 @@ func ConverSQLType(row []interface{}) ([]interface{}, error) {
 }
 
 // 将row转化为相关类型interface
-func ReplaceSqlPlaceHolder(sqlStr string, row []interface{}, crc32 uint32, timeStr string) string {
-	offset := 2
+func ReplaceSqlPlaceHolder(sqlStr string, row []interface{}, crc32 uint32, timeStr string, threadId uint32) string {
+	offset := 3
 	rs := make([]interface{}, len(row)+offset)
 	rs[0] = crc32
 	rs[1] = timeStr
+	rs[2] = threadId
 	for i, _ := range row {
 		rs[i+offset] = "%v"
 	}

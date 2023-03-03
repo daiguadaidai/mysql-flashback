@@ -99,7 +99,7 @@ Example:
 ./mysql-flashback execute \
     --filepath="/tmp/test.sql" \
     --paraller=8 \
-    --sql-log-bin=false \
+    --sql-log-bin=true \
     --db-host="127.0.0.1" \
     --db-port=3306 \
     --db-username="root" \

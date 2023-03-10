@@ -664,7 +664,7 @@ func (this *Creator) writeRollbackUpdate(
 		// 设置获取set子句的值
 		setUseRow, err := tbl.GetUseRow(ev.Rows[setIndex])
 		if err != nil {
-			seelog.Errorf("%v. Update Ori 表: %v. 字段: %v. binlog数据: %v", err, tbl.TableName, tbl.UseColumnNames, ev.Rows[setIndex])
+			seelog.Errorf("%v. Update Rollback 表: %v. 字段: %v. binlog数据: %v", err, tbl.TableName, tbl.UseColumnNames, ev.Rows[setIndex])
 			continue
 		}
 

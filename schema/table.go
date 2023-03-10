@@ -208,7 +208,7 @@ func (this *Table) SetMTableInfo(mTable *visitor.MatchTable) error {
 func (this *Table) GetUseRow(row []interface{}) ([]interface{}, error) {
 	useRow := make([]interface{}, len(this.UseColumnNames))
 	for i, pos := range this.UseColumnPos {
-		if pos > len(row) {
+		if pos >= len(row) {
 			return useRow, fmt.Errorf("最新到表字段数 大于 binlog解析的字段数据")
 		}
 

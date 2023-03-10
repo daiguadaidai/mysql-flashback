@@ -205,12 +205,16 @@ func (this *Table) SetMTableInfo(mTable *visitor.MatchTable) error {
 }
 
 // 获取只用字段
-func (this *Table) GetUseRow(row []interface{}) []interface{} {
+func (this *Table) GetUseRow(row []interface{}) ([]interface{}, error) {
 	useRow := make([]interface{}, len(this.UseColumnNames))
 	for i, pos := range this.UseColumnPos {
+		if pos > len(row) {
+			return useRow, fmt.Errorf("最新到表字段数 大于 binlog解析的字段数据")
+		}
+
 		useRow[i] = row[pos]
 	}
-	return useRow
+	return useRow, nil
 }
 
 // 过滤行

@@ -540,7 +540,12 @@ func (this *Creator) writeOriUpdate(
 		}
 
 		// 设置获取set子句的值
-		setUseRow := tbl.GetUseRow(ev.Rows[setIndex])
+		setUseRow, err := tbl.GetUseRow(ev.Rows[setIndex])
+		if err != nil {
+			seelog.Errorf("%v. Update Ori 表: %v. 字段: %v. binlog数据: %v", err, tbl.TableName, tbl.UseColumnNames, ev.Rows[setIndex])
+			continue
+		}
+
 		placeholderValues := make([]interface{}, len(setUseRow)+len(tbl.PKColumnNames))
 		for i, field := range setUseRow {
 			placeholderValues[i] = field
@@ -657,7 +662,12 @@ func (this *Creator) writeRollbackUpdate(
 		}
 
 		// 设置获取set子句的值
-		setUseRow := tbl.GetUseRow(ev.Rows[setIndex])
+		setUseRow, err := tbl.GetUseRow(ev.Rows[setIndex])
+		if err != nil {
+			seelog.Errorf("%v. Update Ori 表: %v. 字段: %v. binlog数据: %v", err, tbl.TableName, tbl.UseColumnNames, ev.Rows[setIndex])
+			continue
+		}
+
 		placeholderValues := make([]interface{}, len(setUseRow)+len(tbl.PKColumnNames))
 		for i, field := range setUseRow {
 			placeholderValues[i] = field

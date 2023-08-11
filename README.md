@@ -268,3 +268,37 @@ Flags:
   -h, --help                     help for execute
       --paraller int             回滚并发数 (default 1)
 ```
+
+## 离线binlog文件生成回滚信息
+
+之前展示的生成回滚信息是使用模拟`slave`连接到`mysql`进行获取binlog事件, 经常是`mysql`连接已经不存在了, 需要指定离线`binlog`进行生成回滚信息
+
+```
+解析离线binlog, 生成回滚SQL. 如下:
+Example:
+./mysql-flashback offline \
+    --enable-rollback-insert=true \
+    --enable-rollback-update=true \
+    --enable-rollback-delete=true \
+    --thread-id=15 \
+    --save-dir="" \
+    --schema-file="" \
+    --match-sql="select * from schema1.table1 where name = 'aa'" \
+    --match-sql="select * from schema2.table1 where name = 'aa'" \
+    --binlog-file="mysql-bin.0000001" \
+    --binlog-file="mysql-bin.0000002"
+
+Usage:
+  mysql-flashback offline [flags]
+
+Flags:
+      --binlog-file stringArray   有哪些binlog文件
+      --enable-rollback-delete    是否启用回滚 delete (default true)
+      --enable-rollback-insert    是否启用回滚 insert (default true)
+      --enable-rollback-update    是否启用回滚 update (default true)
+  -h, --help                      help for offline
+      --match-sql stringArray     使用简单的 SELECT 语句来匹配需要的字段和记录
+      --save-dir string           相关文件保存的路径
+      --schema-file string        表结构文件
+      --thread-id uint32          需要rollback的thread id
+```

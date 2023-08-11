@@ -5,7 +5,9 @@ import (
 	"github.com/cihub/seelog"
 	"github.com/daiguadaidai/mysql-flashback/dao"
 	"github.com/daiguadaidai/mysql-flashback/utils"
+	"github.com/daiguadaidai/mysql-flashback/utils/sql_parser"
 	"github.com/daiguadaidai/mysql-flashback/visitor"
+	"github.com/daiguadaidai/parser/ast"
 	"github.com/daiguadaidai/parser/opcode"
 	"strings"
 )
@@ -63,6 +65,51 @@ func NewTable(sName string, tName string) (*Table, error) {
 	t.InitSQLTemplate()
 
 	return t, nil
+}
+
+func NewTableWithStmt(createStmtNode *ast.CreateTableStmt) (*Table, error) {
+	t := new(Table)
+	t.SchemaName = createStmtNode.Table.Schema.String()
+	t.TableName = createStmtNode.Table.Name.String()
+
+	// 获取表字段
+	t.ColumnNames = sql_parser.GetCreateTableColumnNames(createStmtNode)
+	if len(t.ColumnNames) == 0 {
+		return nil, fmt.Errorf("表: %s.%s 没有获取到字段, 请查看建表结构是否正确", t.SchemaName, t.TableName)
+	}
+
+	// 获取主键
+	t.PKColumnNames, t.PKType = getUKColumnNames(createStmtNode)
+
+	// 初始化的时候将所有字段名赋值给需要的字段
+	t.UseColumnNames = t.ColumnNames
+
+	t.initAllColumnPos() // 初始化所有字段的位点信息
+
+	t.initUseColumnPos() // 初始化使用字段的位点
+
+	t.InitSQLTemplate()
+
+	return t, nil
+}
+
+func getUKColumnNames(createStmtNode *ast.CreateTableStmt) ([]string, PKType) {
+	// 获取主键
+	pkColumns := sql_parser.GetCreateTablePKColumnNames(createStmtNode)
+	if len(pkColumns) != 0 {
+		return pkColumns, PKTypePK
+	}
+	seelog.Warnf("表: %s.%s 没有主键", createStmtNode.Table.Schema.String(), createStmtNode.Table.Name.String())
+
+	// 获取唯一键
+	_, ukColumns := sql_parser.GetCreateTableFirstUKColumnNames(createStmtNode)
+	if len(pkColumns) != 0 {
+		return ukColumns, PKTypeUK
+	}
+	seelog.Warnf("表: %s.%s 没有唯一键", createStmtNode.Table.Schema.String(), createStmtNode.Table.Name.String())
+
+	columnNames := sql_parser.GetCreateTableColumnNames(createStmtNode)
+	return columnNames, PKTypeAllColumns
 }
 
 // 添加表的所有字段名

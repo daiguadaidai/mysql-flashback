@@ -53,6 +53,10 @@ func FileAbs(filePath string) (string, error) {
 	return filepath.Abs(filePath)
 }
 
+func Filename(filePath string) string {
+	return filepath.Base(filePath)
+}
+
 // 获取执行文件的路径
 func CMDDir() (string, error) {
 	filePath, err := exec.LookPath(os.Args[0])

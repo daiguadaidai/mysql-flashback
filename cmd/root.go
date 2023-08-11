@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/daiguadaidai/mysql-flashback/services/offline"
 	"os"
 
 	"github.com/daiguadaidai/mysql-flashback/config"
@@ -90,6 +91,29 @@ Example:
 	},
 }
 
+// cerateCmd 是 rootCmd 的一个子命令
+var offlineCmd = &cobra.Command{
+	Use:   "offline",
+	Short: "解析离线binlog, 生成回滚SQL",
+	Long: `解析离线binlog, 生成回滚SQL. 如下:
+Example:
+./mysql-flashback offline \
+    --enable-rollback-insert=true \
+    --enable-rollback-update=true \
+    --enable-rollback-delete=true \
+    --thread-id=15 \
+    --save-dir="" \
+    --schema-file="" \
+    --match-sql="select * from schema1.table1 where name = 'aa'" \
+    --match-sql="select * from schema2.table1 where name = 'aa'" \
+    --binlog-file="mysql-bin.0000001" \
+    --binlog-file="mysql-bin.0000002"
+`,
+	Run: func(cmd *cobra.Command, args []string) {
+		offline.Start(offlineCfg)
+	},
+}
+
 // executeCmd 是 rootCmd 的一个子命令
 var executeCmd = &cobra.Command{
 	Use:   "execute",
@@ -122,6 +146,7 @@ func Execute() {
 func init() {
 	addCreateCMD()
 	addExecuteCMD()
+	addOfflineCMD()
 }
 
 var cc *config.CreateConfig
@@ -137,14 +162,14 @@ func addCreateCMD() {
 	createCmd.PersistentFlags().Uint64Var(&cc.EndLogPos, "end-log-pos", 0, "结束日志文件点位")
 	createCmd.PersistentFlags().StringVar(&cc.StartTime, "start-time", "", "开始时间")
 	createCmd.PersistentFlags().StringVar(&cc.EndTime, "end-time", "", "结束时间")
-	createCmd.PersistentFlags().StringSliceVar(&cc.RollbackSchemas, "rollback-schema", make([]string, 0, 1), "指定回滚的数据库, 该命令可以指定多个")
-	createCmd.PersistentFlags().StringSliceVar(&cc.RollbackTables, "rollback-table", make([]string, 0, 1), "需要回滚的表, 该命令可以指定多个")
+	createCmd.PersistentFlags().StringArrayVar(&cc.RollbackSchemas, "rollback-schema", []string{}, "指定回滚的数据库, 该命令可以指定多个")
+	createCmd.PersistentFlags().StringArrayVar(&cc.RollbackTables, "rollback-table", []string{}, "需要回滚的表, 该命令可以指定多个")
 	createCmd.PersistentFlags().Uint32Var(&cc.ThreadID, "thread-id", 0, "需要rollback的thread id")
 	createCmd.PersistentFlags().BoolVar(&cc.EnableRollbackInsert, "enable-rollback-insert", config.ENABLE_ROLLBACK_INSERT, "是否启用回滚 insert")
 	createCmd.PersistentFlags().BoolVar(&cc.EnableRollbackUpdate, "enable-rollback-update", config.ENABLE_ROLLBACK_UPDATE, "是否启用回滚 update")
 	createCmd.PersistentFlags().BoolVar(&cc.EnableRollbackDelete, "enable-rollback-delete", config.ENABLE_ROLLBACK_DELETE, "是否启用回滚 delete")
 	createCmd.PersistentFlags().StringVar(&cc.SaveDir, "save-dir", "", "相关文件保存的路径")
-	createCmd.PersistentFlags().StringSliceVar(&cc.MatchSqls, "match-sql", make([]string, 0, 1), "使用简单的 SELECT 语句来匹配需要的字段和记录")
+	createCmd.PersistentFlags().StringArrayVar(&cc.MatchSqls, "match-sql", []string{}, "使用简单的 SELECT 语句来匹配需要的字段和记录")
 
 	cdbc = new(config.DBConfig)
 	// 链接的数据库配置
@@ -160,6 +185,23 @@ func addCreateCMD() {
 	createCmd.PersistentFlags().BoolVar(&cdbc.AutoCommit, "db-auto-commit", config.DB_AUTO_COMMIT, "数据库自动提交")
 	createCmd.PersistentFlags().BoolVar(&cdbc.PasswordIsDecrypt, "db-password-is-decrypt", config.DB_PASSWORD_IS_DECRYPT, "数据库密码是否需要解密")
 	createCmd.PersistentFlags().BoolVar(&cdbc.SqlLogBin, "sql-log-bin", config.SQL_LOG_BIN, "执行sql是否记录binlog")
+}
+
+var offlineCfg *config.OfflineConfig
+
+// 添加离线创建回滚SQL子命令
+func addOfflineCMD() {
+	rootCmd.AddCommand(offlineCmd)
+
+	offlineCfg = config.NewOffileConfig()
+	offlineCmd.PersistentFlags().Uint32Var(&offlineCfg.ThreadID, "thread-id", 0, "需要rollback的thread id")
+	offlineCmd.PersistentFlags().BoolVar(&offlineCfg.EnableRollbackInsert, "enable-rollback-insert", config.ENABLE_ROLLBACK_INSERT, "是否启用回滚 insert")
+	offlineCmd.PersistentFlags().BoolVar(&offlineCfg.EnableRollbackUpdate, "enable-rollback-update", config.ENABLE_ROLLBACK_UPDATE, "是否启用回滚 update")
+	offlineCmd.PersistentFlags().BoolVar(&offlineCfg.EnableRollbackDelete, "enable-rollback-delete", config.ENABLE_ROLLBACK_DELETE, "是否启用回滚 delete")
+	offlineCmd.PersistentFlags().StringVar(&offlineCfg.SaveDir, "save-dir", "", "相关文件保存的路径")
+	offlineCmd.PersistentFlags().StringVar(&offlineCfg.SchemaFile, "schema-file", "", "表结构文件")
+	offlineCmd.PersistentFlags().StringArrayVar(&offlineCfg.MatchSqls, "match-sql", []string{}, "使用简单的 SELECT 语句来匹配需要的字段和记录")
+	offlineCmd.PersistentFlags().StringArrayVar(&offlineCfg.BinlogFiles, "binlog-file", []string{}, "有哪些binlog文件")
 }
 
 // 添加创建回滚SQL子命令

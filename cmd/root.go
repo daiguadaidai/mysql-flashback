@@ -17,6 +17,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/daiguadaidai/mysql-flashback/services/offline"
+	"github.com/daiguadaidai/mysql-flashback/services/offline_stat"
 	"os"
 
 	"github.com/daiguadaidai/mysql-flashback/config"
@@ -134,6 +135,28 @@ Example:
 	},
 }
 
+// cerateCmd 是 rootCmd 的一个子命令
+var offlineStatCmd = &cobra.Command{
+	Use:   "offline-stat",
+	Short: "解析离线binlog, 统计binlog信息",
+	Long: `解析离线binlog, 统计binlog信息. 如下:
+执行成功后会在当前目录生成 4 个文件
+offline_stat_output/table_stat.txt # 保存表统计信息
+offline_stat_output/thread_stat.txt # 保存线程统计信息
+offline_stat_output/timestamp_stat.txt # 保存时间统计信息(记录的是每个事务执行 BEGIN 的时间)
+offline_stat_output/xid_stat.txt # 保存 xid 统计信息
+
+Example:
+./mysql-flashback offline-stat \
+    --save-dir="offline_stat_output" \
+    --binlog-file="mysql-bin.0000001" \
+    --binlog-file="mysql-bin.0000002"
+`,
+	Run: func(cmd *cobra.Command, args []string) {
+		offline_stat.Start(offlineStatCfg)
+	},
+}
+
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
@@ -147,6 +170,7 @@ func init() {
 	addCreateCMD()
 	addExecuteCMD()
 	addOfflineCMD()
+	addOfflineStatCMD()
 }
 
 var cc *config.CreateConfig
@@ -229,4 +253,15 @@ func addExecuteCMD() {
 	executeCmd.PersistentFlags().BoolVar(&edbc.AutoCommit, "db-auto-commit", config.DB_AUTO_COMMIT, "数据库自动提交")
 	executeCmd.PersistentFlags().BoolVar(&edbc.PasswordIsDecrypt, "db-password-is-decrypt", config.DB_PASSWORD_IS_DECRYPT, "数据库密码是否需要解密")
 	executeCmd.PersistentFlags().BoolVar(&cdbc.SqlLogBin, "sql-log-bin", config.SQL_LOG_BIN, "执行sql是否记录binlog")
+}
+
+var offlineStatCfg *config.OfflineStatConfig
+
+// 添加离线创建回滚SQL子命令
+func addOfflineStatCMD() {
+	rootCmd.AddCommand(offlineStatCmd)
+
+	offlineStatCfg = new(config.OfflineStatConfig)
+	offlineStatCmd.PersistentFlags().StringArrayVar(&offlineStatCfg.BinlogFiles, "binlog-file", []string{}, "有哪些binlog文件")
+	offlineStatCmd.PersistentFlags().StringVar(&offlineStatCfg.SaveDir, "save-dir", config.DefaultOfflineStatSaveDir, "统计信息保存目录")
 }

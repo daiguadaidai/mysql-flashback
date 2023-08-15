@@ -16,3 +16,6 @@
 rollback_files
 rollback_sqls
 mysql-flashback
+
+# add by HH 2023-08-15
+offline_stat_output

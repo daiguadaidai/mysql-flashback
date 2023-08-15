@@ -7,7 +7,7 @@ import (
 )
 
 func Test_ParseOfflineBinlog_01(t *testing.T) {
-	binlogFileName := "/Users/hh/Desktop/mysql-bin.000098"
+	binlogFileName := "/Users/hh/Desktop/mysql-bin.000200"
 
 	// 创建一个 BinlogParser 对象
 	parser := replication.NewBinlogParser()

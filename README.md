@@ -303,3 +303,74 @@ Flags:
       --schema-file string        表结构文件
       --thread-id uint32          需要rollback的thread id
 ```
+
+## 离线解析binlog文件生成相关统计信息
+
+生成4总统计信息, 会保存在相关的目录文件中:
+
+1. **offline_stat_output/table_stat.txt:** 表相关的统计信息(通过影响行数排序)
+
+2. **offline_stat_output/thread_stat.txt:** ThreadId相关的统计信息(通过影响行数排序)
+
+3. **offline_stat_output/timestamp_stat.txt:** 时间相关的统计信息, 通过秒为单位进行统计, 记录的时间是事务执行`BEGIN`的时间, 一个时间点有可能有多个事务.
+
+4. **offline_stat_output/xid_stat.txt:** 事务相关的统计信息, 每个事务的相关统计信息, 通过xid代表不同事务
+
+### 使用方法
+
+```
+./mysql-flashback offline-stat --help
+解析离线binlog, 统计binlog信息. 如下:
+执行成功后会在当前目录生成 4 个文件
+offline_stat_output/table_stat.txt # 保存表统计信息
+offline_stat_output/thread_stat.txt # 保存线程统计信息
+offline_stat_output/timestamp_stat.txt # 保存时间统计信息(记录的是每个事务执行 BEGIN 的时间)
+offline_stat_output/xid_stat.txt # 保存 xid 统计信息
+
+Example:
+./mysql-flashback offline-stat \
+    --save-dir="offline_stat_output" \
+    --binlog-file="mysql-bin.0000001" \
+    --binlog-file="mysql-bin.0000002"
+
+Usage:
+  mysql-flashback offline-stat [flags]
+
+Flags:
+      --binlog-file stringArray   有哪些binlog文件
+  -h, --help                      help for offline-stat
+      --save-dir string           统计信息保存目录 (default "offline_stat_output")
+```
+
+### 每个文件示例
+
+#### table_stat.txt
+
+```
+表: employees.emp_01 	dml影响行数: 100, insert: 100, update: 0, delete: 0, 表出现次数: 1
+表: employees.emp 	dml影响行数: 10, insert: 0, update: 7, delete: 3, 表出现次数: 3
+```
+
+#### thread_stat.txt
+
+```
+threadId: 464	dml影响行数: 110, insert: 100, update: 7, delete: 3, 表出现次数: 4
+```
+
+#### timestamp_stat.txt
+
+```
+2023-08-11 14:35:06: dml影响行数: 1, insert: 0, update: 0, delete: 1, 事务数: 1, 开始位点: /Users/hh/Desktop/mysql-bin.000200:395
+2023-08-11 14:35:20: dml影响行数: 2, insert: 0, update: 0, delete: 2, 事务数: 1, 开始位点: /Users/hh/Desktop/mysql-bin.000200:749
+2023-08-11 14:36:22: dml影响行数: 100, insert: 100, update: 0, delete: 0, 事务数: 1, 开始位点: /Users/hh/Desktop/mysql-bin.000200:1147
+2023-08-11 14:37:28: dml影响行数: 7, insert: 0, update: 7, delete: 0, 事务数: 1, 开始位点: /Users/hh/Desktop/mysql-bin.000200:4217
+```
+
+#### xid_stat.txt
+
+```
+Xid: 7500 	2023-08-11 14:35:06 	 dml影响行数: 1, insert: 0, update: 0, delete: 1, 开始位点: /Users/hh/Desktop/mysql-bin.000200:395
+Xid: 7501 	2023-08-11 14:35:20 	 dml影响行数: 2, insert: 0, update: 0, delete: 2, 开始位点: /Users/hh/Desktop/mysql-bin.000200:749
+Xid: 7504 	2023-08-11 14:36:22 	 dml影响行数: 100, insert: 100, update: 0, delete: 0, 开始位点: /Users/hh/Desktop/mysql-bin.000200:1147
+Xid: 7507 	2023-08-11 14:37:28 	 dml影响行数: 7, insert: 0, update: 7, delete: 0, 开始位点: /Users/hh/Desktop/mysql-bin.000200:4217
+```

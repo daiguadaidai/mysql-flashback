@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/cihub/seelog"
 	"github.com/daiguadaidai/mysql-flashback/utils"
-	"github.com/daiguadaidai/parser/opcode"
+	"github.com/pingcap/tidb/pkg/parser/opcode"
 	"strings"
 )
 

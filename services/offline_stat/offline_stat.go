@@ -5,7 +5,7 @@ import (
 	"github.com/cihub/seelog"
 	"github.com/daiguadaidai/mysql-flashback/config"
 	"github.com/daiguadaidai/mysql-flashback/utils"
-	"github.com/siddontang/go-mysql/replication"
+	"github.com/go-mysql-org/go-mysql/replication"
 	"os"
 	"sort"
 )

@@ -2,7 +2,7 @@ package visitor
 
 import (
 	"fmt"
-	"github.com/daiguadaidai/parser"
+	"github.com/pingcap/tidb/pkg/parser"
 	"testing"
 )
 

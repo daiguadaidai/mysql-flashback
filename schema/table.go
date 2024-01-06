@@ -7,8 +7,8 @@ import (
 	"github.com/daiguadaidai/mysql-flashback/utils"
 	"github.com/daiguadaidai/mysql-flashback/utils/sql_parser"
 	"github.com/daiguadaidai/mysql-flashback/visitor"
-	"github.com/daiguadaidai/parser/ast"
-	"github.com/daiguadaidai/parser/opcode"
+	"github.com/pingcap/tidb/pkg/parser/ast"
+	"github.com/pingcap/tidb/pkg/parser/opcode"
 	"strings"
 )
 

@@ -9,8 +9,8 @@ import (
 	"github.com/daiguadaidai/mysql-flashback/models"
 	"github.com/daiguadaidai/mysql-flashback/utils"
 	"github.com/daiguadaidai/mysql-flashback/visitor"
-	"github.com/siddontang/go-mysql/mysql"
-	"github.com/siddontang/go-mysql/replication"
+	"github.com/go-mysql-org/go-mysql/mysql"
+	"github.com/go-mysql-org/go-mysql/replication"
 	"strings"
 	"time"
 )
@@ -168,14 +168,18 @@ var (
 	RollbackPartialTable RollbackType = 20
 )
 
-/* 获取需要回滚的表
+/*
+	获取需要回滚的表
+
 Return:
 [
-	{
-        cchema: 数据库名,
-        table: 表名
-    },
-    ......
+
+		{
+	        cchema: 数据库名,
+	        table: 表名
+	    },
+	    ......
+
 ]
 */
 func FindRollbackTables(cc *config.CreateConfig, mTables []*visitor.MatchTable) ([]*models.DBTable, RollbackType, error) {

@@ -5,7 +5,7 @@ import (
 	"github.com/cihub/seelog"
 	"github.com/daiguadaidai/mysql-flashback/utils"
 	"github.com/daiguadaidai/peep"
-	"github.com/siddontang/go-mysql/replication"
+	"github.com/go-mysql-org/go-mysql/replication"
 	"strings"
 	"sync"
 )

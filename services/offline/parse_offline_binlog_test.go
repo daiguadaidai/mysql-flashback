@@ -1,7 +1,7 @@
 package offline
 
 import (
-	"github.com/siddontang/go-mysql/replication"
+	"github.com/go-mysql-org/go-mysql/replication"
 	"os"
 	"testing"
 )

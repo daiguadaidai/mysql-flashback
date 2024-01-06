@@ -3,9 +3,9 @@ package visitor
 import (
 	"fmt"
 	"github.com/daiguadaidai/mysql-flashback/utils"
-	"github.com/daiguadaidai/parser/ast"
-	"github.com/daiguadaidai/parser/opcode"
-	driver "github.com/daiguadaidai/tidb/types/parser_driver"
+	"github.com/pingcap/tidb/pkg/parser/ast"
+	"github.com/pingcap/tidb/pkg/parser/opcode"
+	driver "github.com/pingcap/tidb/pkg/types/parser_driver"
 	"strings"
 )
 
@@ -40,7 +40,7 @@ func (this *SelectVisitor) Enter(in ast.Node) (out ast.Node, skipChildren bool) 
 		this.Err = this.enterBinaryOperationExpr(node)
 	case *ast.SelectField:
 		this.Err = this.enterSelectField(node)
-	case *ast.PatternLikeExpr:
+	case *ast.PatternLikeOrIlikeExpr:
 		this.Err = fmt.Errorf("不支持 WHERE LIKE 语句")
 	}
 

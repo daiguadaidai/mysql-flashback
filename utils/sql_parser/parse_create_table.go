@@ -2,9 +2,9 @@ package sql_parser
 
 import (
 	"fmt"
-	"github.com/daiguadaidai/parser"
-	"github.com/daiguadaidai/parser/ast"
-	"github.com/daiguadaidai/parser/model"
+	"github.com/pingcap/tidb/pkg/parser"
+	"github.com/pingcap/tidb/pkg/parser/ast"
+	"github.com/pingcap/tidb/pkg/parser/model"
 	"strings"
 )
 

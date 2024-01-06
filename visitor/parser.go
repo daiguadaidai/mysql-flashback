@@ -2,8 +2,8 @@ package visitor
 
 import (
 	"fmt"
-	"github.com/daiguadaidai/parser"
-	_ "github.com/daiguadaidai/tidb/types/parser_driver"
+	"github.com/pingcap/tidb/pkg/parser"
+	_ "github.com/pingcap/tidb/pkg/types/parser_driver"
 )
 
 func GetMatchTables(querys string) ([]*MatchTable, error) {

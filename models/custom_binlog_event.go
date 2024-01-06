@@ -1,6 +1,6 @@
 package models
 
-import "github.com/siddontang/go-mysql/replication"
+import "github.com/go-mysql-org/go-mysql/replication"
 
 type CustomBinlogEvent struct {
 	Event    *replication.BinlogEvent

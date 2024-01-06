@@ -2,8 +2,8 @@ package visitor
 
 import (
 	"fmt"
-	"github.com/daiguadaidai/tidb/types"
-	driver "github.com/daiguadaidai/tidb/types/parser_driver"
+	"github.com/pingcap/tidb/pkg/types"
+	driver "github.com/pingcap/tidb/pkg/types/parser_driver"
 )
 
 func GetValueExprValue(node *driver.ValueExpr) (interface{}, error) {

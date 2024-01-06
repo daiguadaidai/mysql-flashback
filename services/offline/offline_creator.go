@@ -8,7 +8,7 @@ import (
 	"github.com/daiguadaidai/mysql-flashback/schema"
 	"github.com/daiguadaidai/mysql-flashback/utils"
 	"github.com/daiguadaidai/mysql-flashback/visitor"
-	"github.com/siddontang/go-mysql/replication"
+	"github.com/go-mysql-org/go-mysql/replication"
 	"os"
 	"strconv"
 	"strings"

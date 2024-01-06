@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/daiguadaidai/parser/opcode"
+	"github.com/pingcap/tidb/pkg/parser/opcode"
 )
 
 type BoolNode struct {

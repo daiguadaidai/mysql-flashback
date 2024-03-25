@@ -44,19 +44,36 @@ type DBConfig struct {
 }
 
 func (this *DBConfig) GetDataSource() string {
-	dataSource := fmt.Sprintf(
-		"%v:%v@tcp(%v:%v)/%v?charset=%v&allowOldPasswords=%v&timeout=%vs&autocommit=%v&parseTime=True&loc=Local&sql_log_bin=%v",
-		this.Username,
-		this.GetPassword(),
-		this.Host,
-		this.Port,
-		this.Database,
-		this.CharSet,
-		this.AllowOldPasswords,
-		this.Timeout,
-		this.AutoCommit,
-		this.SqlLogBin,
-	)
+	var dataSource string
+
+	if this.SqlLogBin {
+		dataSource = fmt.Sprintf(
+			"%v:%v@tcp(%v:%v)/%v?charset=%v&allowOldPasswords=%v&timeout=%vs&autocommit=%v&parseTime=True&loc=Local",
+			this.Username,
+			this.GetPassword(),
+			this.Host,
+			this.Port,
+			this.Database,
+			this.CharSet,
+			this.AllowOldPasswords,
+			this.Timeout,
+			this.AutoCommit,
+		)
+	} else {
+		dataSource = fmt.Sprintf(
+			"%v:%v@tcp(%v:%v)/%v?charset=%v&allowOldPasswords=%v&timeout=%vs&autocommit=%v&parseTime=True&loc=Local&sql_log_bin=%v",
+			this.Username,
+			this.GetPassword(),
+			this.Host,
+			this.Port,
+			this.Database,
+			this.CharSet,
+			this.AllowOldPasswords,
+			this.Timeout,
+			this.AutoCommit,
+			this.SqlLogBin,
+		)
+	}
 
 	return dataSource
 }
